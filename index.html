@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>UniMap — UNIOSUN Okuku</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <link
+        rel="stylesheet"
+        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: "Poppins", sans-serif;
+        }
+
+        body {
+            background: #0f172a;
+        }
+
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* TOP HUD */
+
+        .top-panel {
+            position: fixed;
+            top: 18px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: calc(100% - 30px);
+            max-width: 520px;
+            z-index: 1000;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 17px;
+
+            background: rgba(15, 23, 42, 0.92);
+            backdrop-filter: blur(16px);
+
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 20px;
+
+            color: white;
+            box-shadow: 0 10px 35px rgba(0,0,0,0.25);
+        }
+
+        .brand-left {
+            display: flex;
+            align-items: center;
+            gap: 11px;
+        }
+
+        .logo {
+            width: 40px;
+            height: 40px;
+            display: grid;
+            place-items: center;
+
+            background: #fbbf24;
+            color: #0f172a;
+
+            border-radius: 13px;
+            font-weight: 700;
+            font-size: 17px;
+        }
+
+        .brand-text h1 {
+            font-size: 17px;
+            line-height: 1.1;
+        }
+
+        .brand-text p {
+            margin-top: 3px;
+            font-size: 10px;
+            color: #cbd5e1;
+        }
+
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+
+            font-size: 10px;
+            color: #86efac;
+        }
+
+        .status-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #22c55e;
+            box-shadow: 0 0 10px #22c55e;
+        }
+
+        /* SEARCH */
+
+        .search-box {
+            margin-top: 10px;
+            position: relative;
+        }
+
+        .search-box input {
+            width: 100%;
+            height: 48px;
+
+            padding: 0 18px 0 46px;
+
+            border: none;
+            outline: none;
+            border-radius: 16px;
+
+            background: rgba(255,255,255,0.95);
+
+            font-family: "Poppins", sans-serif;
+            font-size: 13px;
+
+            box-shadow: 0 10px 30px rgba(0,0,0,0.18);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 17px;
+            top: 50%;
+            transform: translateY(-50%);
+
+            font-size: 17px;
+        }
+
+        /* LOCATION BUTTON */
+
+        .locate-button {
+            position: fixed;
+            right: 18px;
+            bottom: 105px;
+
+            width: 52px;
+            height: 52px;
+
+            border: none;
+            border-radius: 17px;
+
+            background: #ffffff;
+            color: #1d4ed8;
+
+            font-size: 21px;
+
+            box-shadow: 0 8px 25px rgba(0,0,0,0.25);
+
+            z-index: 1000;
+            cursor: pointer;
+        }
+
+        /* BOTTOM MENU */
+
+        .bottom-menu {
+            position: fixed;
+            left: 50%;
+            bottom: 15px;
+
+            transform: translateX(-50%);
+
+            width: calc(100% - 30px);
+            max-width: 520px;
+
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+
+            padding: 10px 8px;
+
+            background: rgba(15,23,42,0.94);
+            backdrop-filter: blur(16px);
+
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 22px;
+
+            z-index: 1000;
+
+            box-shadow: 0 10px 35px rgba(0,0,0,0.3);
+        }
+
+        .menu-item {
+            border: none;
+            background: none;
+            color: #94a3b8;
+
+            font-family: "Poppins", sans-serif;
+            font-size: 10px;
+
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+
+            cursor: pointer;
+        }
+
+        .menu-item span {
+            font-size: 19px;
+        }
+
+        .menu-item.active {
+            color: #fbbf24;
+        }
+
+        /* CUSTOM MARKERS */
+
+        .campus-marker {
+            width: 42px;
+            height: 42px;
+
+            display: grid;
+            place-items: center;
+
+            background: #1d4ed8;
+            border: 3px solid white;
+
+            border-radius: 50%;
+
+            color: white;
+            font-size: 17px;
+
+            box-shadow: 0 5px 18px rgba(0,0,0,0.3);
+        }
+
+        /* POPUP */
+
+        .leaflet-popup-content-wrapper {
+            border-radius: 15px;
+        }
+
+        .leaflet-popup-content {
+            font-family: "Poppins", sans-serif;
+            font-size: 12px;
+        }
+
+        .location-title {
+            font-weight: 700;
+            font-size: 14px;
+            margin-bottom: 3px;
+        }
+
+        .location-description {
+            color: #64748b;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- TOP INTERFACE -->
+
+    <div class="top-panel">
+
+        <div class="brand">
+
+            <div class="brand-left">
+
+                <div class="logo">
+                    U
+                </div>
+
+                <div class="brand-text">
+                    <h1>UniMap</h1>
+                    <p>UNIOSUN • Okuku Campus</p>
+                </div>
+
+            </div>
+
+            <div class="status">
+                <div class="status-dot"></div>
+                LIVE
+            </div>
+
+        </div>
+
+        <div class="search-box">
+
+            <div class="search-icon">
+                🔍
+            </div>
+
+            <input
+                id="searchInput"
+                type="text"
+                placeholder="Search campus location..."
+            >
+
+        </div>
+
+    </div>
+
+
+    <!-- MAP -->
+
+    <div id="map"></div>
+
+
+    <!-- LOCATE -->
+
+    <button
+        class="locate-button"
+        id="locateButton"
+        title="Locate me"
+    >
+        📍
+    </button>
+
+
+    <!-- BOTTOM MENU -->
+
+    <div class="bottom-menu">
+
+        <button class="menu-item active">
+            <span>🗺️</span>
+            Map
+        </button>
+
+        <button class="menu-item">
+            <span>📍</span>
+            Places
+        </button>
+
+        <button class="menu-item">
+            <span>🧭</span>
+            Explore
+        </button>
+
+        <button class="menu-item">
+            <span>⭐</span>
+            Saved
+        </button>
+
+        <button class="menu-item">
+            <span>👤</span>
+            Profile
+        </button>
+
+    </div>
+
+
+    <!-- LEAFLET -->
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <script>
+
+        // CREATE MAP
+
+        const map = L.map("map", {
+            zoomControl: false
+        }).setView(
+            [8.0250, 4.6658],
+            17
+        );
+
+
+        // MAP TILES
+
+        L.tileLayer(
+            "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+            {
+                maxZoom: 20,
+                attribution:
+                    '&copy; OpenStreetMap contributors'
+            }
+        ).addTo(map);
+
+
+        // CAMPUS LOCATIONS
+
+        const locations = [
+
+            {
+                name: "ETF Building",
+                lat: 8.024636,
+                lng: 4.666222,
+                icon: "🏢",
+                description: "ETF Building"
+            },
+
+            {
+                name: "Auditorium A",
+                lat: 8.024300,
+                lng: 4.666751,
+                icon: "🏛️",
+                description: "Auditorium A"
+            },
+
+            {
+                name: "Auditorium B",
+                lat: 8.0251952,
+                lng: 4.6657043,
+                icon: "🏛️",
+                description: "Auditorium B"
+            }
+
+        ];
+
+
+        // ADD CAMPUS MARKERS
+
+        locations.forEach(location => {
+
+            const markerIcon = L.divIcon({
+
+                className: "",
+
+                html: `
+                    <div class="campus-marker">
+                        ${location.icon}
+                    </div>
+                `,
+
+                iconSize: [42,42],
+                iconAnchor: [21,21],
+                popupAnchor: [0,-22]
+
+            });
+
+
+            const marker = L.marker(
+                [location.lat, location.lng],
+                {
+                    icon: markerIcon
+                }
+            ).addTo(map);
+
+
+            marker.bindPopup(`
+
+                <div class="location-title">
+                    ${location.name}
+                </div>
+
+                <div class="location-description">
+                    ${location.description}<br>
+                    Osun State University, Okuku
+                </div>
+
+            `);
+
+        });
+
+
+        // SEARCH
+
+        const searchInput =
+            document.getElementById("searchInput");
+
+
+        searchInput.addEventListener(
+            "keydown",
+            function(event) {
+
+                if (event.key !== "Enter") return;
+
+                const query =
+                    searchInput.value
+                    .trim()
+                    .toLowerCase();
+
+
+                if (!query) return;
+
+
+                const location =
+                    locations.find(item =>
+                        item.name
+                        .toLowerCase()
+                        .includes(query)
+                    );
+
+
+                if (!location) {
+
+                    alert(
+                        "Location not found yet."
+                    );
+
+                    return;
+                }
+
+
+                map.flyTo(
+                    [location.lat, location.lng],
+                    19,
+                    {
+                        duration: 1
+                    }
+                );
+
+            }
+        );
+
+
+        // LOCATE ME
+
+        document
+            .getElementById("locateButton")
+            .addEventListener(
+                "click",
+                function() {
+
+                    map.locate({
+                        setView: true,
+                        maxZoom: 19
+                    });
+
+                }
+            );
+
+
+        // USER LOCATION
+
+        map.on(
+            "locationfound",
+            function(event) {
+
+                L.circleMarker(
+                    event.latlng,
+                    {
+                        radius: 8,
+                        fillColor: "#2563eb",
+                        color: "#ffffff",
+                        weight: 3,
+                        fillOpacity: 1
+                    }
+                )
+                .addTo(map)
+                .bindPopup("You are here");
+
+            }
+        );
+
+
+        map.on(
+            "locationerror",
+            function() {
+
+                alert(
+                    "Unable to access your location."
+                );
+
+            }
+        );
+
+    </script>
+
+</body>
+</html>
